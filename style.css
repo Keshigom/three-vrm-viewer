@@ -62,8 +62,8 @@ header {
   display: flex;
   background: #353535;
   padding: 0 2em;
-  height: 4rem;
-  line-height: 4rem;
+  height: 3rem;
+  line-height: 3rem;
   align-items: center;
   overflow-x: auto;
   overflow-y: hidden;
