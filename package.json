@@ -1,8 +1,8 @@
 {
-  "name": "three-gltf-viewer",
-  "productName": "glTF Viewer",
+  "name": "three-vrm-viewer",
+  "productName": "VRM Viewer",
   "version": "1.1.0",
-  "description": "Preview glTF models using three.js and a drag-and-drop interface.",
+  "description": "Preview VRM models using three.js and a drag-and-drop interface.",
   "main": "electron/main.js",
   "browser": "src/app.js",
   "scripts": {
@@ -21,11 +21,8 @@
     "clean": "rm bundle.js",
     "postversion": "git push && git push --tags"
   },
-  "now": {
-    "alias": "gltf-viewer.donmccurdy.com",
-    "public": true
-  },
   "keywords": [
+    "VRM",
     "gltf",
     "three.js",
     "three",
@@ -34,7 +31,7 @@
     "modeling",
     "webgl"
   ],
-  "author": "Don McCurdy <dm@donmccurdy.com> (https://www.donmccurdy.com)",
+  "author": "YUKIMOCHI",
   "license": "MIT",
   "dependencies": {
     "dat.gui": "^0.7.0",

@@ -5,6 +5,7 @@ const environments = require('../assets/environment/index');
 const createVignetteBackground = require('three-vignette-background');
 
 require('three/examples/js/loaders/GLTFLoader');
+require('three/examples/js/loaders/VRMLoader');
 require('three/examples/js/loaders/DRACOLoader');
 require('three/examples/js/controls/OrbitControls');
 require('three/examples/js/loaders/RGBELoader');
@@ -56,6 +57,7 @@ module.exports = class Viewer {
       wireframe: false,
       skeleton: false,
       grid: false,
+      vrmExtensions: null,
 
       // Lights
       addLights: true,
@@ -110,6 +112,7 @@ module.exports = class Viewer {
     this.animCtrls = [];
     this.morphFolder = null;
     this.morphCtrls = [];
+    this.vrmMetadataFolder = null;
     this.skeletonHelpers = [];
     this.gridHelper = null;
     this.axesHelper = null;
@@ -181,16 +184,17 @@ module.exports = class Viewer {
 
       });
 
-      const loader = new THREE.GLTFLoader(manager);
-      loader.setCrossOrigin('anonymous');
-      loader.setDRACOLoader( new THREE.DRACOLoader() );
+      const loader = new THREE.VRMLoader(manager);
+      //loader.setCrossOrigin('anonymous');
+      //loader.setDRACOLoader( new THREE.DRACOLoader() );
       const blobURLs = [];
 
-      loader.load(url, (gltf) => {
-
-        const scene = gltf.scene || gltf.scenes[0];
-        const clips = gltf.animations || [];
-        this.setContent(scene, clips);
+      loader.load(url, (vrm) => {
+        this.material_traverse_vrm(vrm);
+        const scene = vrm.scene || vrm.scenes[0];
+        const clips = vrm.animations || [];
+        const vrmExtensions = vrm.userData.gltfExtensions.VRM || null;
+        this.setContent(scene, clips, vrmExtensions);
 
         blobURLs.forEach(URL.revokeObjectURL);
 
@@ -205,11 +209,39 @@ module.exports = class Viewer {
 
   }
 
+  material_traverse_vrm( vrm ) {
+    vrm.scene.traverse(function (object) {
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          for (var i = 0, il = object.material.length; i < il; i++) {
+            var material = new THREE.MeshBasicMaterial();
+            THREE.Material.prototype.copy.call(material, object.material[i]);
+            material.color.copy(object.material[i].color);
+            material.map = object.material[i].map;
+            material.map.needsUpdate = true;
+            material.lights = false;
+            material.side = THREE.DoubleSide;
+            object.material[i] = material;
+          }
+        } else {
+          var material = new THREE.MeshBasicMaterial();
+          THREE.Material.prototype.copy.call(material, object.material);
+          material.color.copy(object.material.color);
+          material.map = object.material.map;
+          material.map.needsUpdate = true;
+          material.lights = false;
+          material.side = THREE.DoubleSide;
+          object.material = material;
+        }
+      }
+    });
+  }
+
   /**
    * @param {THREE.Object3D} object
    * @param {Array<THREE.AnimationClip} clips
    */
-  setContent ( object, clips ) {
+  setContent( object, clips, vrmExtensions ) {
 
     this.clear();
 
@@ -236,11 +268,10 @@ module.exports = class Viewer {
     } else {
 
       this.defaultCamera.position.copy(center);
-      this.defaultCamera.position.x += size / 2.0;
-      this.defaultCamera.position.y += size / 5.0;
-      this.defaultCamera.position.z += size / 2.0;
+      this.defaultCamera.position.x -= size / 8.0;
+      this.defaultCamera.position.y += size / 12.0;
+      this.defaultCamera.position.z -= size / 1.0;
       this.defaultCamera.lookAt(center);
-
     }
 
     this.setCamera(DEFAULT_CAMERA);
@@ -249,6 +280,7 @@ module.exports = class Viewer {
 
     this.scene.add(object);
     this.content = object;
+    this.state.vrmExtensions = vrmExtensions;
 
     this.state.addLights = true;
     this.content.traverse((node) => {
@@ -266,7 +298,7 @@ module.exports = class Viewer {
     this.updateDisplay();
 
     window.content = this.content;
-    console.info('[glTF Viewer] THREE.Scene exported as `window.content`.');
+    console.info('[VRM Viewer] THREE.Scene exported as `window.content`.');
     this.printGraph(this.content);
 
   }
@@ -546,6 +578,8 @@ module.exports = class Viewer {
     this.cameraFolder = gui.addFolder('Cameras');
     this.cameraFolder.domElement.style.display = 'none';
 
+    this.vrmMetadataFolder = gui.addFolder('VRM Metadata');
+
     // Stats.
     const perfFolder = gui.addFolder('Performance');
     const perfLi = document.createElement('li');
@@ -631,6 +665,31 @@ module.exports = class Viewer {
         this.animCtrls.push(ctrl);
       });
     }
+
+    const meta = this.state.vrmExtensions.meta;
+
+    if (this.vrmMetadataFolder.__folders.Description) {
+      this.vrmMetadataFolder.removeFolder(this.vrmMetadataFolder.__folders.Description);
+    }
+    const description = this.vrmMetadataFolder.addFolder("Description");
+    description.add({ 'title': meta.title || "" }, 'title');
+    description.add({ 'author': meta.author || "" }, 'author');
+    description.add({ 'contactInformation': meta.contactInformation || "" }, 'contactInformation');
+    description.add({ 'reference': meta.reference || "" }, 'reference');
+    description.add({ 'version': meta.version || "" }, 'version');
+    description.add({ 'exporterVersion': this.state.vrmExtensions.exporterVersion || "" }, 'exporterVersion');
+
+    if (this.vrmMetadataFolder.__folders.Licence) {
+      this.vrmMetadataFolder.removeFolder(this.vrmMetadataFolder.__folders.Licence);
+    }
+    const licence = this.vrmMetadataFolder.addFolder("Licence");
+    licence.add({ 'allowedUserName': meta.allowedUserName || "" }, 'allowedUserName');
+    licence.add({ 'violentUssageName': meta.violentUssageName || "" }, 'violentUssageName');
+    licence.add({ 'sexualUssageName': meta.sexualUssageName || "" }, 'sexualUssageName');
+    licence.add({ 'commercialUssageName': meta.commercialUssageName || "" }, 'commercialUssageName');
+    licence.add({ 'otherPermissionUrl': meta.otherPermissionUrl || "" }, 'otherPermissionUrl');
+    licence.add({ 'licenseName': meta.licenseName || "" }, 'licenseName');
+    licence.add({ 'otherLicenseUrl': meta.otherLicenseUrl || "" }, 'otherLicenseUrl');
   }
 
   clear () {
