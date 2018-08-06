@@ -190,10 +190,10 @@ module.exports = class Viewer {
       const blobURLs = [];
 
       loader.load(url, (vrm) => {
-        this.material_traverse_vrm(vrm);
+        const vrmExtensions = vrm.userData.gltfExtensions.VRM || null;
+        this.vrm_material_processor(vrm, vrmExtensions.materialProperties);
         const scene = vrm.scene || vrm.scenes[0];
         const clips = vrm.animations || [];
-        const vrmExtensions = vrm.userData.gltfExtensions.VRM || null;
         this.setContent(scene, clips, vrmExtensions);
 
         blobURLs.forEach(URL.revokeObjectURL);
@@ -209,31 +209,48 @@ module.exports = class Viewer {
 
   }
 
-  material_traverse_vrm( vrm ) {
-    vrm.scene.traverse(function (object) {
-      if (object.material) {
-        if (Array.isArray(object.material)) {
-          for (var i = 0, il = object.material.length; i < il; i++) {
-            var material = new THREE.MeshBasicMaterial();
-            THREE.Material.prototype.copy.call(material, object.material[i]);
-            material.color.copy(object.material[i].color);
-            material.map = object.material[i].map;
-            material.map.needsUpdate = true;
-            material.lights = false;
-            material.side = THREE.DoubleSide;
-            object.material[i] = material;
+  vrm_material_processor(vrm, materialProperties) {
+    var material_prop = {};
+    materialProperties.forEach(materialProperty => {
+      material_prop[materialProperty.name] = materialProperty;
+    });
+
+    vrm.scene.traverse((node) => {
+      if (!node.isMesh) return;
+      const materials = Array.isArray(node.material)
+        ? node.material
+        : [node.material];
+      var new_materials = [];
+      materials.forEach(base => {
+        var material = new THREE.MeshBasicMaterial();
+        THREE.Material.prototype.copy.call(material, base);
+        material.color.copy(base.color);
+        material.map = base.map;
+        material.map.needsUpdate = true;
+        material.lights = false;
+        material.side = THREE.DoubleSide;
+
+        // VRM Unity Compatible Layer
+        if (material_prop[material.name]) {
+          const compat_prop = material_prop[material.name];
+          if (compat_prop.tagMap || compat_prop.tagMap.RenderType) {
+            switch (compat_prop.tagMap.RenderType) {
+              case "Transparent":
+                material.transparent = true;
+                break;
+              case "TransparentCutout":
+                material.transparent = true;
+                material.alphaTest = compat_prop.floatProperties._Cutoff || 0.5;
+                break;
+            }
           }
-        } else {
-          var material = new THREE.MeshBasicMaterial();
-          THREE.Material.prototype.copy.call(material, object.material);
-          material.color.copy(object.material.color);
-          material.map = object.material.map;
-          material.map.needsUpdate = true;
-          material.lights = false;
-          material.side = THREE.DoubleSide;
-          object.material = material;
         }
-      }
+
+        new_materials.push(material);
+      });
+      node.material = new_materials.length > 1
+        ? new_materials
+        : new_materials[0];
     });
   }
 

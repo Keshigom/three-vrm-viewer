@@ -1,4 +1,4 @@
-var CACHE_NAME = "VRM-Viewer-1.1.0";
+var CACHE_NAME = "VRM-Viewer-1.1.1";
 var urlsToCache = [
     "https://vrm-viewer.yukimochi.io/",
     "https://vrm-viewer.yukimochi.io/assets/favicon.ico",
