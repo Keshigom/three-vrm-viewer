@@ -1,0 +1,15 @@
+{
+    "name": "VRM Viewer",
+    "short_name": "VRM View",
+    "icons": [
+        {
+            "src": "https://vrm-viewer.yukimochi.io/assets/icons/glTF-Viewer.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "https://vrm-viewer.yukimochi.io/index.html",
+    "display": "standalone",
+    "background_color": "#F5F5F5",
+    "theme_color": "#353535"
+}

@@ -7,11 +7,26 @@
   <meta name="author" content="YUKIMOCHI">
   <meta name="description" content="Drag-and-drop preview tool for VRM 3D models.">
   <link rel="canonical" href="https://vrm-viewer.yukimochi.io/">
+  <link rel="manifest" href="manifest.json">
   <link rel="shortcut icon" href="assets/favicon.ico">
   <link rel="stylesheet" href="style.css">
   <link href="https://fonts.googleapis.com/css?family=Raleway:300,400" rel="stylesheet">
   <script src="lib/gltf-validator.js"></script>
   <script src="bundle.js?v=r95"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js')
+        .then(
+          function (registration) {
+            if (typeof registration.update == 'function') {
+              registration.update();
+            }
+          })
+        .catch(function (error) {
+          console.log("Error Log: " + error);
+        });
+    }
+  </script>
 </head>
 <body>
   <header>
