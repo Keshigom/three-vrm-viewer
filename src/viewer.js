@@ -233,6 +233,7 @@ module.exports = class Viewer {
         // VRM Unity Compatible Layer
         if (material_prop[material.name]) {
           const compat_prop = material_prop[material.name];
+          node.renderOrder = compat_prop.renderQueue;
           if (compat_prop.tagMap || compat_prop.tagMap.RenderType) {
             switch (compat_prop.tagMap.RenderType) {
               case "Transparent":
