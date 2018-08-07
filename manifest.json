@@ -3,7 +3,7 @@
     "short_name": "VRM View",
     "icons": [
         {
-            "src": "https://vrm-viewer.yukimochi.io/assets/icons/glTF-Viewer.png",
+            "src": "https://vrm-viewer.yukimochi.io/assets/icons/VRM-Viewer.png",
             "sizes": "512x512",
             "type": "image/png"
         }
